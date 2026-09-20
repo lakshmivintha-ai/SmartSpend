@@ -1,0 +1,450 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SmartSpend — The pause before the purchase</title>
+<style>
+  :root {
+    --primary: #028090;
+    --dark: #013A40;
+    --secondary: #00A896;
+    --accent: #02C39A;
+    --ink: #1B2B2E;
+    --mute: #5C6F72;
+    --paper: #FFFFFF;
+    --tint: #F2F7F7;
+    --border: #D8E7E6;
+    --danger: #C1121F;
+    --warn: #B5830A;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--tint);
+    color: var(--ink);
+  }
+  header {
+    background: var(--dark);
+    color: white;
+    padding: 28px 20px 24px;
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+  header p {
+    margin: 0;
+    color: #9FD8D3;
+    font-size: 14px;
+    font-style: italic;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .card h2 {
+    margin: 0 0 14px;
+    font-size: 17px;
+    color: var(--dark);
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--mute);
+    margin: 12px 0 4px;
+  }
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    background: var(--tint);
+    color: var(--ink);
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 11px 18px;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+    width: 100%;
+    margin-top: 16px;
+  }
+  .btn-primary:hover { background: var(--dark); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--mute);
+    text-decoration: underline;
+    padding: 6px;
+    font-size: 13px;
+  }
+  .stat-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    flex: 1;
+    min-width: 130px;
+    background: var(--tint);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .stat .num {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .stat .cap {
+    font-size: 12px;
+    color: var(--mute);
+    margin-top: 2px;
+  }
+  .verdict {
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .verdict.safe { background: #E5F7F1; border: 1px solid var(--accent); }
+  .verdict.caution { background: #FFF6E5; border: 1px solid var(--warn); }
+  .verdict.risky { background: #FDECEC; border: 1px solid var(--danger); }
+  .verdict .headline {
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+  .verdict.safe .headline { color: #0B7A55; }
+  .verdict.caution .headline { color: var(--warn); }
+  .verdict.risky .headline { color: var(--danger); }
+  .verdict .reason { font-size: 13.5px; color: var(--ink); line-height: 1.5; }
+  .action-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .action-row button { flex: 1; }
+  .btn-skip { background: var(--accent); color: var(--dark); }
+  .btn-buy { background: var(--tint); color: var(--ink); border: 1px solid var(--border) !important; }
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .tag.safe { background: #E5F7F1; color: #0B7A55; }
+  .tag.caution { background: #FFF6E5; color: var(--warn); }
+  .tag.risky { background: #FDECEC; color: var(--danger); }
+  .empty { color: var(--mute); font-size: 13.5px; font-style: italic; }
+  footer {
+    text-align: center;
+    color: var(--mute);
+    font-size: 12px;
+    padding-bottom: 30px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SmartSpend</h1>
+  <p>Know if you can afford it — before you spend, not after.</p>
+</header>
+
+<main>
+
+  <!-- Income setup -->
+  <div class="card" id="income-card">
+    <h2>Your Money Right Now</h2>
+    <div id="income-form">
+      <label for="balance">Amount you have (₹)</label>
+      <input type="number" id="balance" placeholder="e.g. 500" min="0" />
+      <label for="nextIncome">Next income expected on</label>
+      <input type="date" id="nextIncome" />
+      <button class="btn-primary" onclick="saveIncome()">Save</button>
+    </div>
+    <div id="income-summary" style="display:none;">
+      <div class="stat-row">
+        <div class="stat">
+          <div class="num" id="statBalance">₹0</div>
+          <div class="cap">Current balance</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="statDays">0</div>
+          <div class="cap">Days until next income</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="statDaily">₹0</div>
+          <div class="cap">Safe to spend per day</div>
+        </div>
+      </div>
+      <button class="btn-ghost" onclick="resetIncome()">Update balance / income date</button>
+    </div>
+  </div>
+
+  <!-- Want check -->
+  <div class="card" id="check-card" style="display:none;">
+    <h2>Can I Afford This?</h2>
+    <label for="wantAmount">How much do you want to spend (₹)</label>
+    <input type="number" id="wantAmount" placeholder="e.g. 300" min="0" />
+    <label for="wantPurpose">What is it for</label>
+    <input type="text" id="wantPurpose" placeholder="e.g. new shoes" />
+    <label for="wantNecessity">How necessary is it</label>
+    <select id="wantNecessity">
+      <option value="essential">Essential — I need this</option>
+      <option value="nice">Nice to have</option>
+      <option value="not_necessary">Not necessary right now</option>
+    </select>
+    <button class="btn-primary" onclick="checkAfford()">Check</button>
+
+    <div id="verdict-box"></div>
+  </div>
+
+  <!-- Streak + insights -->
+  <div class="card">
+    <h2>Your Track Record</h2>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="num" id="statStreak">0</div>
+        <div class="cap">Current safe-decision streak</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="statTotal">0</div>
+        <div class="cap">Total decisions logged</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="statOverride">0</div>
+        <div class="cap">Bought anyway despite risk</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <h2>Recent Decisions</h2>
+    <div id="history-list"><div class="empty">No decisions logged yet. Try a "Can I afford this?" check above.</div></div>
+  </div>
+
+</main>
+
+<footer>SmartSpend — Global Innovation Hackathon 2026 · Build for a Better Future</footer>
+
+<script>
+  const LS_INCOME = "smartspend_income";
+  const LS_HISTORY = "smartspend_history";
+
+  function loadIncome() {
+    const raw = localStorage.getItem(LS_INCOME);
+    return raw ? JSON.parse(raw) : null;
+  }
+  function loadHistory() {
+    const raw = localStorage.getItem(LS_HISTORY);
+    return raw ? JSON.parse(raw) : [];
+  }
+  function saveHistory(list) {
+    localStorage.setItem(LS_HISTORY, JSON.stringify(list));
+  }
+
+  function daysLeftFrom(dateStr) {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const target = new Date(dateStr);
+    target.setHours(0,0,0,0);
+    const diff = Math.round((target - today) / 86400000);
+    return Math.max(diff, 1);
+  }
+
+  function fmt(n) {
+    return "₹" + Math.round(n).toLocaleString("en-IN");
+  }
+
+  function saveIncome() {
+    const balance = parseFloat(document.getElementById("balance").value);
+    const nextIncome = document.getElementById("nextIncome").value;
+    if (isNaN(balance) || balance < 0 || !nextIncome) {
+      alert("Please enter a valid balance and next income date.");
+      return;
+    }
+    localStorage.setItem(LS_INCOME, JSON.stringify({ balance, nextIncome }));
+    renderIncome();
+  }
+
+  function resetIncome() {
+    document.getElementById("income-summary").style.display = "none";
+    document.getElementById("income-form").style.display = "block";
+    document.getElementById("check-card").style.display = "none";
+    const income = loadIncome();
+    if (income) {
+      document.getElementById("balance").value = income.balance;
+      document.getElementById("nextIncome").value = income.nextIncome;
+    }
+  }
+
+  function renderIncome() {
+    const income = loadIncome();
+    if (!income) return;
+    const days = daysLeftFrom(income.nextIncome);
+    const daily = income.balance / days;
+
+    document.getElementById("income-form").style.display = "none";
+    document.getElementById("income-summary").style.display = "block";
+    document.getElementById("check-card").style.display = "block";
+
+    document.getElementById("statBalance").textContent = fmt(income.balance);
+    document.getElementById("statDays").textContent = days;
+    document.getElementById("statDaily").textContent = fmt(daily);
+  }
+
+  function checkAfford() {
+    const income = loadIncome();
+    if (!income) return;
+
+    const amount = parseFloat(document.getElementById("wantAmount").value);
+    const purpose = document.getElementById("wantPurpose").value.trim() || "this purchase";
+    const necessity = document.getElementById("wantNecessity").value;
+
+    if (isNaN(amount) || amount <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    const days = daysLeftFrom(income.nextIncome);
+    const dailySafe = income.balance / days;
+    const remaining = income.balance - amount;
+    const projectedDaily = remaining / days;
+
+    let level, headline, reason, suggestion;
+
+    if (amount > income.balance) {
+      level = "risky";
+      headline = "⚠ Not affordable right now";
+      reason = `You only have ${fmt(income.balance)}, and this costs ${fmt(amount)}. You'd go negative before your next income in ${days} day(s).`;
+      suggestion = "Wait until your balance covers this, or look for a cheaper option.";
+    } else if (projectedDaily < dailySafe * 0.5) {
+      level = "risky";
+      headline = "⚠ Risky right now";
+      reason = `You have ${fmt(income.balance)} and ${days} day(s) left. Spending ${fmt(amount)} on ${purpose} drops your safe daily amount from ${fmt(dailySafe)} to ${fmt(projectedDaily)} — that's a big cut.`;
+      suggestion = necessity === "essential"
+        ? "This is marked essential, so if you must spend, try to trim elsewhere for the rest of the cycle."
+        : "Consider waiting 24 hours, or set aside part of it and skip the rest.";
+    } else if (projectedDaily < dailySafe * 0.75 || necessity === "not_necessary") {
+      level = "caution";
+      headline = "◐ Proceed with caution";
+      reason = `Spending ${fmt(amount)} on ${purpose} leaves you ${fmt(projectedDaily)}/day instead of ${fmt(dailySafe)}/day for the remaining ${days} day(s).`;
+      suggestion = "It's manageable, but not free money — worth a second thought if it's not essential.";
+    } else {
+      level = "safe";
+      headline = "✓ Safe to spend";
+      reason = `Spending ${fmt(amount)} on ${purpose} still leaves you ${fmt(projectedDaily)}/day for the remaining ${days} day(s) — close to your normal safe rate of ${fmt(dailySafe)}/day.`;
+      suggestion = "Go ahead — this fits comfortably within your budget.";
+    }
+
+    const box = document.getElementById("verdict-box");
+    box.innerHTML = `
+      <div class="verdict ${level}">
+        <div class="headline">${headline}</div>
+        <div class="reason">${reason}<br/><br/><em>${suggestion}</em></div>
+        <div class="action-row">
+          <button class="btn-skip" onclick="logDecision('${level}', ${amount}, '${purpose.replace(/'/g, "\\'")}', '${necessity}', 'skipped')">I'll skip / wait</button>
+          <button class="btn-buy" onclick="logDecision('${level}', ${amount}, '${purpose.replace(/'/g, "\\'")}', '${necessity}', 'bought')">I'm buying it anyway</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function logDecision(level, amount, purpose, necessity, outcome) {
+    const history = loadHistory();
+    history.unshift({
+      date: new Date().toISOString(),
+      amount, purpose, necessity, level, outcome
+    });
+    saveHistory(history);
+
+    if (outcome === "bought") {
+      const income = loadIncome();
+      income.balance = Math.max(income.balance - amount, 0);
+      localStorage.setItem(LS_INCOME, JSON.stringify(income));
+      renderIncome();
+    }
+
+    document.getElementById("wantAmount").value = "";
+    document.getElementById("wantPurpose").value = "";
+    document.getElementById("verdict-box").innerHTML = "";
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const history = loadHistory();
+    const totalEl = document.getElementById("statTotal");
+    const overrideEl = document.getElementById("statOverride");
+    const streakEl = document.getElementById("statStreak");
+    const listEl = document.getElementById("history-list");
+
+    totalEl.textContent = history.length;
+
+    const overrides = history.filter(h => h.level === "risky" && h.outcome === "bought").length;
+    overrideEl.textContent = overrides;
+
+    let streak = 0;
+    for (const h of history) {
+      const good = (h.level === "safe") || (h.level !== "safe" && h.outcome === "skipped");
+      if (good) streak++; else break;
+    }
+    streakEl.textContent = streak;
+
+    if (history.length === 0) {
+      listEl.innerHTML = `<div class="empty">No decisions logged yet. Try a "Can I afford this?" check above.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = history.slice(0, 12).map(h => {
+      const d = new Date(h.date);
+      const dateStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+      const outcomeLabel = h.outcome === "bought" ? "Bought" : "Skipped";
+      return `
+        <div class="history-item">
+          <span>${dateStr} · ${h.purpose} · ${fmt(h.amount)} · ${outcomeLabel}</span>
+          <span class="tag ${h.level}">${h.level}</span>
+        </div>
+      `;
+    }).join("");
+  }
+
+  (function init() {
+    const income = loadIncome();
+    if (income) {
+      document.getElementById("balance").value = income.balance;
+      document.getElementById("nextIncome").value = income.nextIncome;
+      renderIncome();
+    }
+    renderHistory();
+  })();
+</script>
+
+</body>
+</html>
