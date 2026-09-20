@@ -4,7 +4,7 @@
 
 A real-time spending decision assistant for students and young earners, built for the **Global Innovation Hackathon 2026 – Build for a Better Future**.
 
-Team: X (Product & Frontend) · Y (Backend & Logic)
+Team: Lakshmi Narasamma(Product & Frontend) · Lavanya(Backend & Logic)
 
 ---
 
